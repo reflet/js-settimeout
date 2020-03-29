@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>JavaScript - setTimeout/setIntervalを使ってみる</title>
+</head>
+<body>
+  <h1>タイムアウトの動作確認</h1>
+  <input type="button" value="スタート (setTimeout)" style="padding:5px 20px;" id="doTimeout">
+  <input type="button" value="スタート (setInterval)" style="padding:5px 20px;" id="doInterval"><br>
+
+  <div id="benchmarks" style="color:red"></div><br>
+  <div id="result">
+    <div class="loop"></div>
+    <div class="exec"></div>
+  </div>
+
+  <script src="./js/lib/jquery-1.7.2.min.js"></script>
+  <script>
+    var timer, count = 1, max = 3, interval = 1000, res = {
+      bench: $('#benchmarks'),
+      loop : $('#result div.loop'),
+      exec : $('#result div.exec')
+    };
+    var func = {
+      benchmark: {
+        status: {s:null, cur: null, e:null},
+        start: function() { this.status['s'] = new Date(); },
+        cur: function() { this.status['cur'] = new Date(); },
+        end: function() { this.status['e'] = new Date(); },
+        res: function() { return ((this.status['e'] - this.status['s']) / 1000) + '秒経過'; },
+        now: function() {
+          var now = new Date(), pre = this.status['cur'] || this.status['s'];
+          return ((now - pre) / 1000) + '秒経過';
+        }
+      },
+      exec: function() {
+        res.loop.text('ループ：' + count + '回目');
+        var k = 1;
+        for (var i = 0; i < 100000000; ++i) {
+          if (i % 50000000 === 0) {
+            var txt;
+            txt  = 'ループ' + count + 'の処理：' + ( k++ ) + '回';
+            txt += '( ' + func.benchmark.now() + ' )<br>'
+            res.exec.append(txt);
+            func.benchmark.cur();
+          }
+        }
+      },
+      setTimeout: function() {
+        clearTimeout(timer);
+        func.exec();
+        if (count < max) {
+          timer = setTimeout(func.setTimeout, interval);
+        }
+        if (count === max) {
+          func.benchmark.end();
+          res.bench.text(func.benchmark.res());
+        }
+        ++count;
+      },
+      setInterval: function() {
+        timer = setInterval(function() {
+          func.exec();
+          if (count === max) {
+            clearInterval(timer);
+            func.benchmark.end();
+            res.bench.text(func.benchmark.res());
+          }
+          ++count;
+        }, interval);
+      },
+      init: function() {
+        count = 1;
+        res.bench.text('');
+        res.loop.text('');
+        res.exec.text('');
+      }
+    };
+
+    $(function() {
+      $('#doInterval').click(function() {
+        func.init();
+        func.benchmark.start();
+        func.setInterval();
+      });
+
+      $('#doTimeout').click(function() {
+        func.init();
+        func.benchmark.start();
+        func.setTimeout();
+      });
+    });
+  </script>
+
+</body>
+</html>
